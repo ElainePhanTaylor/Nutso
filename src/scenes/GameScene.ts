@@ -1341,6 +1341,17 @@ export class GameScene extends Phaser.Scene {
         this.totalPoints += pointsEarned; // Add to cumulative total
         this.updateHUD();
         this.cleanupNut();
+        
+        // Check if round is over after scoring
+        if (this.shotsRemaining <= 0) {
+          this.time.delayedCall(500, () => {
+            if (this.score >= 5) {
+              this.showWin();
+            } else {
+              this.showLose();
+            }
+          });
+        }
       }
     });
   }
