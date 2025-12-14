@@ -110,6 +110,9 @@ export class BossScene extends Phaser.Scene {
       });
     }
 
+    // Castle in the background (gets bigger with higher boss levels)
+    this.createCastle();
+
     // Ground (themed)
     this.ground = this.add.rectangle(width / 2, height - 30, width, 60, theme.groundColor);
     this.physics.add.existing(this.ground, true);
@@ -149,6 +152,110 @@ export class BossScene extends Phaser.Scene {
       fontSize: '18px',
       color: '#bdc3c7',
     }).setOrigin(0.5).setDepth(100);
+  }
+
+  private createCastle() {
+    const { width, height } = this.scale;
+    
+    // Boss number determines castle size (1 = level 10, 2 = level 20, etc.)
+    const bossNumber = this.level / 10;
+    const scale = 0.6 + bossNumber * 0.15; // Gets bigger each boss
+    
+    const castleX = width / 2;
+    const groundY = height - 60;
+    
+    const castle = this.add.graphics();
+    
+    // Castle colors (dark, spooky)
+    const stoneColor = 0x4a4a5a;
+    const stoneDark = 0x3a3a4a;
+    const roofColor = 0x2a2a3a;
+    const windowColor = 0x9b59b6; // Purple glowing windows
+    
+    // Main keep (center tower)
+    const keepWidth = 120 * scale;
+    const keepHeight = 200 * scale;
+    castle.fillStyle(stoneColor, 1);
+    castle.fillRect(castleX - keepWidth / 2, groundY - keepHeight, keepWidth, keepHeight);
+    
+    // Keep roof (pointed)
+    castle.fillStyle(roofColor, 1);
+    castle.fillTriangle(
+      castleX - keepWidth / 2 - 10, groundY - keepHeight,
+      castleX + keepWidth / 2 + 10, groundY - keepHeight,
+      castleX, groundY - keepHeight - 80 * scale
+    );
+    
+    // Left tower
+    const towerWidth = 60 * scale;
+    const towerHeight = 160 * scale;
+    castle.fillStyle(stoneDark, 1);
+    castle.fillRect(castleX - keepWidth / 2 - towerWidth, groundY - towerHeight, towerWidth, towerHeight);
+    
+    // Left tower roof (cone)
+    castle.fillStyle(roofColor, 1);
+    castle.fillTriangle(
+      castleX - keepWidth / 2 - towerWidth - 5, groundY - towerHeight,
+      castleX - keepWidth / 2 + 5, groundY - towerHeight,
+      castleX - keepWidth / 2 - towerWidth / 2, groundY - towerHeight - 50 * scale
+    );
+    
+    // Right tower
+    castle.fillRect(castleX + keepWidth / 2, groundY - towerHeight, towerWidth, towerHeight);
+    
+    // Right tower roof
+    castle.fillTriangle(
+      castleX + keepWidth / 2 - 5, groundY - towerHeight,
+      castleX + keepWidth / 2 + towerWidth + 5, groundY - towerHeight,
+      castleX + keepWidth / 2 + towerWidth / 2, groundY - towerHeight - 50 * scale
+    );
+    
+    // Battlements on main keep
+    const battlementWidth = 15 * scale;
+    const battlementHeight = 20 * scale;
+    castle.fillStyle(stoneColor, 1);
+    for (let i = 0; i < 5; i++) {
+      const bx = castleX - keepWidth / 2 + 10 + i * (keepWidth - 20) / 4;
+      castle.fillRect(bx - battlementWidth / 2, groundY - keepHeight - battlementHeight, battlementWidth, battlementHeight);
+    }
+    
+    // Windows (glowing purple)
+    castle.fillStyle(windowColor, 0.8);
+    
+    // Main window (arched)
+    castle.fillRect(castleX - 15 * scale, groundY - keepHeight + 40 * scale, 30 * scale, 50 * scale);
+    castle.fillCircle(castleX, groundY - keepHeight + 40 * scale, 15 * scale);
+    
+    // Tower windows
+    const towerWindowY = groundY - towerHeight + 50 * scale;
+    castle.fillCircle(castleX - keepWidth / 2 - towerWidth / 2, towerWindowY, 12 * scale);
+    castle.fillCircle(castleX + keepWidth / 2 + towerWidth / 2, towerWindowY, 12 * scale);
+    
+    // Door (dark)
+    castle.fillStyle(0x1a1a2a, 1);
+    castle.fillRect(castleX - 20 * scale, groundY - 60 * scale, 40 * scale, 60 * scale);
+    castle.fillCircle(castleX, groundY - 60 * scale, 20 * scale);
+    
+    // Add some glow effect around windows
+    const glow = this.add.graphics();
+    glow.fillStyle(windowColor, 0.2);
+    glow.fillCircle(castleX, groundY - keepHeight + 60 * scale, 40 * scale);
+    
+    // Animate window glow
+    this.tweens.add({
+      targets: glow,
+      alpha: 0.5,
+      duration: 1500,
+      yoyo: true,
+      repeat: -1,
+    });
+    
+    // Boss level indicator on castle
+    this.add.text(castleX, groundY - keepHeight - 100 * scale, `Boss ${bossNumber}`, {
+      fontSize: `${20 * scale}px`,
+      color: '#9b59b6',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setAlpha(0.7);
   }
 
   private createOwl() {
