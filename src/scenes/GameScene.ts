@@ -127,11 +127,11 @@ export class GameScene extends Phaser.Scene {
     // Basket
     this.createBasket();
 
-    // Branches (obstacles)
-    this.createBranches();
+    // Branches (obstacles) - DISABLED
+    // this.createBranches();
 
-    // Moving bird obstacles (appear after level 5)
-    this.createMovingObstacles();
+    // Moving bird obstacles (appear after level 5) - DISABLED
+    // this.createMovingObstacles();
 
     // Trajectory line
     this.trajectoryLine = this.add.graphics();
@@ -148,7 +148,7 @@ export class GameScene extends Phaser.Scene {
     this.createSun();
     this.createLeaves();
     this.createBirds();
-    this.createOwlShelves();
+    // this.createOwlShelves(); - DISABLED
     
     // Branding
     this.add.text(width - 10, height - 10, 'Taylor Made Games', {
@@ -436,7 +436,8 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private createMovingObstacles() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private _createMovingObstacles() {
     const { width, height } = this.scale;
     this.movingObstacles = [];
 
@@ -492,7 +493,8 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private createBranches() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private _createBranches() {
     const { width, height } = this.scale;
     const playableHeight = height - 120; // Above ground
 
@@ -924,7 +926,8 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private createOwlShelves() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private _createOwlShelves() {
     const { width, height } = this.scale;
     
     // Owl shelves logic:
