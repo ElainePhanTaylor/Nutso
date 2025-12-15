@@ -1253,8 +1253,8 @@ export class GameScene extends Phaser.Scene {
     const numNuts = this.devMode ? 5 : 1;
 
     for (let i = 0; i < numNuts; i++) {
-      // Stagger the launch of each nut by 50ms
-      const delay = i * 50;
+      // Stagger the launch of each nut by 125ms (increased spacing)
+      const delay = i * 125;
       
       this.time.delayedCall(delay, () => {
         // All nuts travel the same trajectory
@@ -1341,9 +1341,9 @@ export class GameScene extends Phaser.Scene {
       });
     }
 
-    // In dev mode, allow shooting again quickly
+    // In dev mode, allow shooting again quickly (after all 5 nuts launched)
     if (this.devMode) {
-      this.time.delayedCall(500, () => {
+      this.time.delayedCall(800, () => {
         this.currentNut = null; // Clear so we can shoot again
         this.canShoot = true;
       });
