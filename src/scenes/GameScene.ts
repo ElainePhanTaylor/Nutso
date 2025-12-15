@@ -1343,7 +1343,8 @@ export class GameScene extends Phaser.Scene {
 
     // In dev mode, allow shooting again quickly
     if (this.devMode) {
-      this.time.delayedCall(200, () => {
+      this.time.delayedCall(500, () => {
+        this.currentNut = null; // Clear so we can shoot again
         this.canShoot = true;
       });
     }
