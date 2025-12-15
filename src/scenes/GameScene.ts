@@ -377,12 +377,15 @@ export class GameScene extends Phaser.Scene {
     sky.fillGradientStyle(theme.skyColor, theme.skyColor, theme.skyColor2, theme.skyColor2, 1);
     sky.fillRect(0, 0, width, height);
 
-    // World name display (brief)
-    this.add.text(width / 2, height - 25, theme.name, {
-      fontSize: '14px',
+    // World name display - larger and more prominent
+    this.add.text(width / 2, height - 30, theme.name, {
+      fontSize: '28px',
       color: '#ffffff',
       fontStyle: 'italic',
-    }).setOrigin(0.5).setAlpha(0.5).setDepth(10);
+      fontFamily: 'Georgia, serif',
+      stroke: '#000000',
+      strokeThickness: 3,
+    }).setOrigin(0.5).setAlpha(0.7).setDepth(10);
 
     // Special effects per world
     if (theme.name === 'Misty Hollow') {
