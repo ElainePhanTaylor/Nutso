@@ -1289,9 +1289,9 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(nutBody, this.basketZone, () => {
       if (this.hasScored) return;
       
-      const nutBodyPhys = nutBody.body as Phaser.Physics.Arcade.Body;
+      const body = nutBody.body as Phaser.Physics.Arcade.Body;
       // Only score if nut is moving downward (entering from top)
-      if (nutBodyPhys && nutBodyPhys.velocity.y > 0) {
+      if (body && body.velocity.y > 0) {
         this.hasScored = true;
         this.onScore();
       }
