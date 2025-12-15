@@ -1249,92 +1249,95 @@ export class GameScene extends Phaser.Scene {
     const baseAngle = Math.atan2(dragY, dragX);
     const power = (dragDist / this.maxDragDistance) * 800;
 
-    // Dev mode: shoot 5 nuts in a spread pattern
+    // Dev mode: shoot 5 nuts in the same trajectory with slight delay
     const numNuts = this.devMode ? 5 : 1;
-    const spreadAngle = this.devMode ? 0.15 : 0; // Angle spread between nuts
 
     for (let i = 0; i < numNuts; i++) {
-      // Calculate angle offset for spread (-2, -1, 0, 1, 2 for 5 nuts)
-      const angleOffset = this.devMode ? (i - 2) * spreadAngle : 0;
-      const angle = baseAngle + angleOffset;
-
-      // Create physics body
-      const nutBody = this.add.circle(startX, startY, 12, 0x8B4513);
-      this.physics.add.existing(nutBody);
+      // Stagger the launch of each nut by 50ms
+      const delay = i * 50;
       
-      const body = nutBody.body as Phaser.Physics.Arcade.Body;
+      this.time.delayedCall(delay, () => {
+        // All nuts travel the same trajectory
+        const angle = baseAngle;
 
-      body.setVelocity(Math.cos(angle) * power, Math.sin(angle) * power);
-      body.setBounce(0.75);
-      body.setDrag(45);
-      body.setCircle(12);
-
-      // Create emoji
-      const nutEmoji = this.add.text(startX, startY, '🥜', { fontSize: '24px' }).setOrigin(0.5);
-
-      // Only track the center nut for scoring (in dev mode)
-      if (i === Math.floor(numNuts / 2)) {
-        this.currentNut = { body: nutBody, emoji: nutEmoji };
-      }
-
-      // Set up physics for all nuts
-      this.physics.add.collider(nutBody, this.ground);
-      
-      if (this.backboard) {
-        this.physics.add.collider(nutBody, this.backboard);
-      }
-
-      // Basket scoring for all nuts in dev mode
-      this.physics.add.overlap(nutBody, this.basketZone, () => {
-        if (!nutBody.getData('scored')) {
-          nutBody.setData('scored', true);
-          const nutBodyPhys = nutBody.body as Phaser.Physics.Arcade.Body;
-          if (nutBodyPhys && nutBodyPhys.velocity.y > 0) {
-            // Score!
-            this.score++;
-            this.points += 100;
-            this.totalPoints += 100;
-            this.updateHUD();
-            
-            // Animate into basket
-            this.tweens.add({
-              targets: [nutBody, nutEmoji],
-              y: this.basket.y + 20,
-              scale: 0.5,
-              alpha: 0,
-              duration: 300,
-              onComplete: () => {
-                nutBody.destroy();
-                nutEmoji.destroy();
-              }
-            });
-          }
-        }
-      });
-
-      // Sync emoji position in update (for extra nuts)
-      if (i !== Math.floor(numNuts / 2)) {
-        const syncFn = () => {
-          if (nutBody.active) {
-            nutEmoji.setPosition(nutBody.x, nutBody.y);
-          }
-        };
-        this.events.on('update', syncFn);
+        // Create physics body
+        const nutBody = this.add.circle(startX, startY, 12, 0x8B4513);
+        this.physics.add.existing(nutBody);
         
-        // Clean up after 5 seconds
-        this.time.delayedCall(5000, () => {
-          this.events.off('update', syncFn);
-          if (nutBody.active) nutBody.destroy();
-          if (nutEmoji.active) nutEmoji.destroy();
-        });
-      }
+        const body = nutBody.body as Phaser.Physics.Arcade.Body;
 
-      // Spin animation
-      this.tweens.add({
-        targets: nutEmoji,
-        rotation: Math.PI * 6,
-        duration: 3000,
-        repeat: -1,
+        body.setVelocity(Math.cos(angle) * power, Math.sin(angle) * power);
+        body.setBounce(0.75);
+        body.setDrag(45);
+        body.setCircle(12);
+
+        // Create emoji
+        const nutEmoji = this.add.text(startX, startY, '🥜', { fontSize: '24px' }).setOrigin(0.5);
+
+        // Only track the first nut for main scoring
+        if (i === 0) {
+          this.currentNut = { body: nutBody, emoji: nutEmoji };
+        }
+
+        // Set up physics for all nuts
+        this.physics.add.collider(nutBody, this.ground);
+        
+        if (this.backboard) {
+          this.physics.add.collider(nutBody, this.backboard);
+        }
+
+        // Basket scoring for all nuts in dev mode
+        this.physics.add.overlap(nutBody, this.basketZone, () => {
+          if (!nutBody.getData('scored')) {
+            nutBody.setData('scored', true);
+            const nutBodyPhys = nutBody.body as Phaser.Physics.Arcade.Body;
+            if (nutBodyPhys && nutBodyPhys.velocity.y > 0) {
+              // Score!
+              this.score++;
+              this.points += 100;
+              this.totalPoints += 100;
+              this.updateHUD();
+              
+              // Animate into basket
+              this.tweens.add({
+                targets: [nutBody, nutEmoji],
+                y: this.basket.y + 20,
+                scale: 0.5,
+                alpha: 0,
+                duration: 300,
+                onComplete: () => {
+                  nutBody.destroy();
+                  nutEmoji.destroy();
+                }
+              });
+            }
+          }
+        });
+
+        // Sync emoji position in update (for extra nuts)
+        if (i !== 0) {
+          const syncFn = () => {
+            if (nutBody.active) {
+              nutEmoji.setPosition(nutBody.x, nutBody.y);
+            }
+          };
+          this.events.on('update', syncFn);
+          
+          // Clean up after 5 seconds
+          this.time.delayedCall(5000, () => {
+            this.events.off('update', syncFn);
+            if (nutBody.active) nutBody.destroy();
+            if (nutEmoji.active) nutEmoji.destroy();
+          });
+        }
+
+        // Spin animation
+        this.tweens.add({
+          targets: nutEmoji,
+          rotation: Math.PI * 6,
+          duration: 3000,
+          repeat: -1,
+        });
       });
     }
 

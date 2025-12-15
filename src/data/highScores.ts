@@ -69,3 +69,4 @@ export function isHighScore(score: number): boolean {
   return score > scores[scores.length - 1].score;
 }
 
+
