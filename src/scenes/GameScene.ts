@@ -1171,9 +1171,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onPointerDown(pointer: Phaser.Input.Pointer) {
-    // In dev mode, only check canShoot; in normal mode, also check currentNut
-    if (!this.canShoot) return;
-    if (!this.devMode && this.currentNut) return;
+    if (!this.canShoot || this.currentNut) return;
 
     // Allow aiming from anywhere on the left third of the screen or near squirrel
     const dist = Phaser.Math.Distance.Between(pointer.x, pointer.y, this.squirrel.x, this.squirrel.y);
@@ -1247,112 +1245,42 @@ export class GameScene extends Phaser.Scene {
     const startX = this.squirrel.x;
     const startY = this.squirrel.y - 30;
 
-    // Calculate base velocity
-    const dragX = this.dragStartPos.x - this.dragCurrentPos.x;
-    const dragY = this.dragStartPos.y - this.dragCurrentPos.y;
-    const dragDist = Math.min(Math.sqrt(dragX * dragX + dragY * dragY), this.maxDragDistance);
-    const baseAngle = Math.atan2(dragY, dragX);
-    const power = (dragDist / this.maxDragDistance) * 800;
-
-    // Dev mode: shoot 5 nuts in the same trajectory with slight delay
-    if (this.devMode) {
-      // In dev mode, don't track currentNut - just fire all nuts independently
-      for (let i = 0; i < 5; i++) {
-        const delay = i * 125;
-        
-        this.time.delayedCall(delay, () => {
-          const angle = baseAngle;
-          const nutBody = this.add.circle(startX, startY, 12, 0x8B4513);
-          this.physics.add.existing(nutBody);
-          
-          const body = nutBody.body as Phaser.Physics.Arcade.Body;
-          body.setVelocity(Math.cos(angle) * power, Math.sin(angle) * power);
-          body.setBounce(0.75);
-          body.setDrag(45);
-          body.setCircle(12);
-
-          const nutEmoji = this.add.text(startX, startY, '🥜', { fontSize: '24px' }).setOrigin(0.5);
-
-          this.physics.add.collider(nutBody, this.ground);
-          if (this.backboard) {
-            this.physics.add.collider(nutBody, this.backboard);
-          }
-
-          // Basket scoring
-          this.physics.add.overlap(nutBody, this.basketZone, () => {
-            if (!nutBody.getData('scored')) {
-              nutBody.setData('scored', true);
-              const nutBodyPhys = nutBody.body as Phaser.Physics.Arcade.Body;
-              if (nutBodyPhys && nutBodyPhys.velocity.y > 0) {
-                this.score++;
-                this.points += 100;
-                this.totalPoints += 100;
-                this.updateHUD();
-                
-                this.tweens.add({
-                  targets: [nutBody, nutEmoji],
-                  y: this.basket.y + 20,
-                  scale: 0.5,
-                  alpha: 0,
-                  duration: 300,
-                  onComplete: () => {
-                    nutBody.destroy();
-                    nutEmoji.destroy();
-                  }
-                });
-              }
-            }
-          });
-
-          // Sync emoji with physics body
-          const syncFn = () => {
-            if (nutBody.active) {
-              nutEmoji.setPosition(nutBody.x, nutBody.y);
-            }
-          };
-          this.events.on('update', syncFn);
-          
-          // Spin animation
-          this.tweens.add({
-            targets: nutEmoji,
-            rotation: Math.PI * 6,
-            duration: 3000,
-            repeat: -1,
-          });
-
-          // Clean up after 5 seconds
-          this.time.delayedCall(5000, () => {
-            this.events.off('update', syncFn);
-            if (nutBody.active) nutBody.destroy();
-            if (nutEmoji.active) nutEmoji.destroy();
-          });
-        });
-      }
-
-      // Allow shooting again quickly - don't set currentNut at all in dev mode
-      this.time.delayedCall(800, () => {
-        this.canShoot = true;
-      });
-      return; // Skip normal nut setup
-    }
-
-    // Normal mode: single nut with full tracking
-    const angle = baseAngle;
+    // Create physics body
     const nutBody = this.add.circle(startX, startY, 12, 0x8B4513);
     this.physics.add.existing(nutBody);
     
     const body = nutBody.body as Phaser.Physics.Arcade.Body;
+
+    // Calculate velocity
+    const dragX = this.dragStartPos.x - this.dragCurrentPos.x;
+    const dragY = this.dragStartPos.y - this.dragCurrentPos.y;
+    const dragDist = Math.min(Math.sqrt(dragX * dragX + dragY * dragY), this.maxDragDistance);
+    const angle = Math.atan2(dragY, dragX);
+    const power = (dragDist / this.maxDragDistance) * 800;
+
     body.setVelocity(Math.cos(angle) * power, Math.sin(angle) * power);
-    body.setBounce(0.75);
+    body.setBounce(0.75); // More bounce for bank shots!
     body.setDrag(45);
     body.setCircle(12);
 
+    // Create emoji
     const nutEmoji = this.add.text(startX, startY, '🥜', { fontSize: '24px' }).setOrigin(0.5);
+
     this.currentNut = { body: nutBody, emoji: nutEmoji };
 
+    // Ground collision
     this.physics.add.collider(nutBody, this.ground);
+    
+    // Backboard collision (for bank shots!) - hitting backboard means no swoosh
     if (this.backboard) {
       this.physics.add.collider(nutBody, this.backboard, () => {
+        this.nutHitRim = true; // Hit the backboard, no swoosh
+      });
+    }
+
+    // Branch collisions - bouncing off branches means no swoosh
+    for (const branch of this.branches) {
+      this.physics.add.collider(nutBody, branch, () => {
         this.nutHitRim = true;
       });
     }
@@ -1360,7 +1288,9 @@ export class GameScene extends Phaser.Scene {
     // Basket overlap - check if entering from top
     this.physics.add.overlap(nutBody, this.basketZone, () => {
       if (this.hasScored) return;
+      
       const nutBodyPhys = nutBody.body as Phaser.Physics.Arcade.Body;
+      // Only score if nut is moving downward (entering from top)
       if (nutBodyPhys && nutBodyPhys.velocity.y > 0) {
         this.hasScored = true;
         this.onScore();
